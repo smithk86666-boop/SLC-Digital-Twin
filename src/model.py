@@ -104,10 +104,12 @@ def forcing_weekly(start, end):
     return f
 
 
-def build_and_run(params, forcing, step_days=7, pumping=None, ws=None, start_heads=None, keep=False):
+def build_and_run(params, forcing, step_days=7, pumping=None, ws=None, start_heads=None, keep=False,
+                  riv_flux=False):
     """Run the model. forcing: daily DataFrame. pumping: dict {(row,col): daily Series of ft3/d}.
 
-    Returns (dates at the end of each stress period, heads array [nper, nrow, ncol]).
+    Returns (dates at the end of each stress period, heads array [nper, nrow, ncol]); with riv_flux=True also
+    the net Platte/creek-to-aquifer flow per stress period (ft3/d, positive = river losing water to the aquifer).
     """
     g = grid()
     p = {**DEFAULT, **params}
@@ -119,7 +121,7 @@ def build_and_run(params, forcing, step_days=7, pumping=None, ws=None, start_hea
     sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=ws, exe_name=MF6, verbosity_level=0)
     flopy.mf6.ModflowTdis(sim, time_units="DAYS", nper=n, perioddata=[(step_days, 1, 1.0)] * n)
     flopy.mf6.ModflowIms(sim, complexity="MODERATE", inner_dvclose=1e-4, outer_dvclose=1e-4)
-    gwf = flopy.mf6.ModflowGwf(sim, modelname=name, save_flows=False)
+    gwf = flopy.mf6.ModflowGwf(sim, modelname=name, save_flows=riv_flux)
     flopy.mf6.ModflowGwfdis(gwf, length_units="FEET", nlay=1, nrow=g.nrow, ncol=g.ncol,
                             delr=geo.CELL_FT, delc=geo.CELL_FT, top=g.top, botm=g.botm[None],
                             idomain=g.active[None].astype(int))
@@ -152,16 +154,23 @@ def build_and_run(params, forcing, step_days=7, pumping=None, ws=None, start_hea
         wel = {i: [[(0, r, c), -float(q.iloc[i * step_days:(i + 1) * step_days].mean())]
                    for (r, c), q in pumping.items()] for i in range(n)}
         flopy.mf6.ModflowGwfwel(gwf, stress_period_data=wel)
-    flopy.mf6.ModflowGwfoc(gwf, head_filerecord=f"{name}.hds", saverecord={i: [("HEAD", "LAST")] for i in range(n)})
+    rec = [("HEAD", "LAST")] + ([("BUDGET", "LAST")] if riv_flux else [])
+    flopy.mf6.ModflowGwfoc(gwf, head_filerecord=f"{name}.hds", budget_filerecord=f"{name}.cbc" if riv_flux else None,
+                           saverecord={i: rec for i in range(n)})
     sim.write_simulation(silent=True)
     ok, buf = sim.run_simulation(silent=True)
     if not ok:
         raise RuntimeError("MODFLOW failed:\n" + "\n".join(buf[-15:]))
     h = flopy.utils.HeadFile(os.path.join(ws, f"{name}.hds")).get_alldata()[:, 0]
     h = np.where(h > 1e20, np.nan, h)
+    flux = None
+    if riv_flux:
+        cbc = flopy.utils.CellBudgetFile(os.path.join(ws, f"{name}.cbc"))
+        flux = np.array([sum(float(np.sum(a["q"])) for a in cbc.get_data(kstpkper=kk, text="RIV"))
+                         for kk in cbc.get_kstpkper()])
     if not keep:
         shutil.rmtree(ws, ignore_errors=True)
-    return dates, h
+    return (dates, h, flux) if riv_flux else (dates, h)
 
 
 _GRID = None

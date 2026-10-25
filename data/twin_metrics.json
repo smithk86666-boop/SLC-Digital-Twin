@@ -1,0 +1,50 @@
+{
+  "river-connected wells": {
+    "twin_1wk_forecast_rmse_ft": 0.7043225923408509,
+    "free_run_rmse_ft": 0.8134367762983316,
+    "persistence_rmse_ft": 0.5543122784503502,
+    "n_wells": 7,
+    "lead_1wk": {
+      "twin_rmse_ft": 0.6599723138735945,
+      "persistence_rmse_ft": 0.4602382814885279,
+      "climatology_rmse_ft": 0.9425038308902717,
+      "n": 44
+    },
+    "lead_4wk": {
+      "twin_rmse_ft": 0.7984951875126771,
+      "persistence_rmse_ft": 1.0254334725698584,
+      "climatology_rmse_ft": 0.9307926866811496,
+      "n": 44
+    },
+    "lead_8wk": {
+      "twin_rmse_ft": 0.8295984321387022,
+      "persistence_rmse_ft": 1.2506056718213567,
+      "climatology_rmse_ft": 1.033771231617899,
+      "n": 44
+    }
+  },
+  "other wells": {
+    "twin_1wk_forecast_rmse_ft": 2.8276833599329287,
+    "free_run_rmse_ft": 2.974803384692829,
+    "persistence_rmse_ft": 1.801027463440503,
+    "n_wells": 16,
+    "lead_1wk": {
+      "twin_rmse_ft": 2.828708612151443,
+      "persistence_rmse_ft": 1.7738007120942703,
+      "climatology_rmse_ft": 2.9603857941985283,
+      "n": 44
+    },
+    "lead_4wk": {
+      "twin_rmse_ft": 2.9852342038198887,
+      "persistence_rmse_ft": 3.7830298932306756,
+      "climatology_rmse_ft": 2.9585212660885567,
+      "n": 44
+    },
+    "lead_8wk": {
+      "twin_rmse_ft": 3.0975118808078212,
+      "persistence_rmse_ft": 4.228298195368825,
+      "climatology_rmse_ft": 3.1358699655192734,
+      "n": 44
+    }
+  }
+}
